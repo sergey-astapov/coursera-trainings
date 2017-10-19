@@ -48,7 +48,35 @@ class HuffmanSuite extends FunSuite {
   test("decode and encode a very short text should be identity") {
     new TestTrees {
       assert(decode(t1, encode(t1)("ab".toList)) === "ab".toList)
+      assert(decode(t2, encode(t2)("abd".toList)) === "abd".toList)
     }
   }
 
+  test("times") {
+    assertResult(List(('a', 2), ('b', 1)))(times(List('a', 'b', 'a')))
+  }
+
+  test("createCodeTree") {
+    assertResult(Fork(Leaf('b',1),Leaf('a',2),List('b', 'a'),3))(createCodeTree(List('a', 'b', 'a')))
+  }
+
+  test("decode french") {
+    assert(decodedSecret.nonEmpty)
+  }
+
+  test("convert") {
+    new TestTrees {
+      assert(convert(t1).nonEmpty)
+    }
+  }
+
+  test("convert french") {
+    assert(convert(frenchCode).nonEmpty)
+  }
+
+  test("quick encode") {
+    new TestTrees {
+      assertResult(encode(t2)("abd".toList))(quickEncode(t2)("abd".toList))
+    }
+  }
 }
