@@ -34,10 +34,32 @@ object Anagrams {
    *
    *  Note: you must use `groupBy` to implement this method!
    */
-  def wordOccurrences(w: Word): Occurrences = ???
+  def wordOccurrences(w: Word): Occurrences =
+    w.toLowerCase
+      .filter(_.isLetter)
+      .toList
+      .groupBy(c => c)
+      .map { case (l, total) => (l, total.size) }
+      .toList
+      .sortBy { case (c, freq) => c }
+
+  private val wordOccurrencesMap = dictionary
+    .map(w => w -> wordOccurrences(w))
+    .toMap
+    .withDefaultValue(Nil)
+
 
   /** Converts a sentence into its character occurrence list. */
-  def sentenceOccurrences(s: Sentence): Occurrences = ???
+  def sentenceOccurrences(s: Sentence): Occurrences = s match {
+    case Nil => List()
+    case _ =>
+      val r: Word = s.reduce((w1, w2) => w1 + w2)
+      wordOccurrencesMap(r) match {
+        case Nil => wordOccurrences(r)
+        case o => o
+    }
+  }
+
 
   /** The `dictionaryByOccurrences` is a `Map` from different occurrences to a sequence of all
    *  the words that have that occurrence count.
@@ -54,10 +76,18 @@ object Anagrams {
    *    List(('a', 1), ('e', 1), ('t', 1)) -> Seq("ate", "eat", "tea")
    *
    */
-  lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] = ???
+  lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] =
+    dictionary
+      .map(w => (wordOccurrences(w), w))
+      .groupBy { case (c, _) => c } map {
+        case (k, v) => (k, v.map { case (_, i) => i } )
+      } withDefaultValue List()
 
   /** Returns all the anagrams of a given word. */
-  def wordAnagrams(word: Word): List[Word] = ???
+  def wordAnagrams(word: Word): List[Word] = {
+    dictionaryByOccurrences(wordOccurrences(word))
+  }
+
 
   /** Returns the list of all subsets of the occurrence list.
    *  This includes the occurrence itself, i.e. `List(('k', 1), ('o', 1))`
@@ -81,7 +111,14 @@ object Anagrams {
    *  Note that the order of the occurrence list subsets does not matter -- the subsets
    *  in the example above could have been displayed in some other order.
    */
-  def combinations(occurrences: Occurrences): List[Occurrences] = ???
+  def combinations(occurrences: Occurrences): List[Occurrences] = occurrences match {
+    case Nil => List(List())
+    case (ch, num) :: os =>
+      for (
+        n <- combinations(os);
+        i <- 0 to num
+      ) yield if (i > 0) (ch, i) :: n else n
+  }
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
    *
@@ -93,7 +130,23 @@ object Anagrams {
    *  Note: the resulting value is an occurrence - meaning it is sorted
    *  and has no zero-entries.
    */
-  def subtract(x: Occurrences, y: Occurrences): Occurrences = ???
+  def subtract(x: Occurrences, y: Occurrences): Occurrences = {
+    val ymap = y.map { case (yc, yi) =>  yc -> yi }.toMap withDefaultValue(-1)
+    x.map { case (xc, xi) => ymap(xc) match {
+      case -1 => (xc, xi)
+      case n => (xc, xi - n)
+    }}
+      .filter { case (tc, ti) => ti > 0 }
+      .sortBy { case (tc, ti) => tc }
+  }
+
+  def contains(x: Occurrences, y: Occurrences): Boolean = {
+    val xmap = x.map { case (xc, xi) => xc -> xi }.toMap withDefaultValue Int.MinValue
+    y.find { case (yc, yi) => xmap(yc) < yi || xmap(yc) == Int.MinValue } match {
+      case None => true
+      case Some(_) => false
+    }
+  }
 
   /** Returns a list of all anagram sentences of the given sentence.
    *
@@ -135,5 +188,30 @@ object Anagrams {
    *
    *  Note: There is only one anagram of an empty sentence.
    */
-  def sentenceAnagrams(sentence: Sentence): List[Sentence] = ???
+  def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
+    def sentences(o: Occurrences): List[Sentence] = o match {
+      case Nil => List(Nil)
+      case _ =>
+        for (
+          word <- dictionary;
+          occurrences = wordOccurrencesMap(word)
+          if contains(o, occurrences);
+          subtracted = subtract(o, occurrences);
+          sent <- sentences(subtracted)
+        ) yield (subtracted, word, sent) match {
+          case (Nil, _, _) => List(word)
+          case (_, _, List()) => List(word)
+          case (_, _, s :: sx) => word :: s :: sx
+        }
+    }
+
+    val res = sentences(sentenceOccurrences(sentence))
+      .filterNot((s: Sentence) =>
+        sentence.length == 1 && s.equals(sentence))
+
+    res match {
+      case List() => List(Nil)
+      case _ => res
+    }
+  }
 }
