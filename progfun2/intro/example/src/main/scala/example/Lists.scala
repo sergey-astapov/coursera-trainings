@@ -23,7 +23,10 @@ object Lists {
    * @param xs A list of natural numbers
    * @return The sum of all elements in `xs`
    */
-    def sum(xs: List[Int]): Int = ???
+    def sum(xs: List[Int]): Int = xs match {
+      case Nil => 0
+      case h :: tail => h + sum(tail)
+    }
   
   /**
    * This method returns the largest element in a list of integers. If the
@@ -38,5 +41,15 @@ object Lists {
    * @return The largest element in `xs`
    * @throws java.util.NoSuchElementException if `xs` is an empty list
    */
-    def max(xs: List[Int]): Int = ???
+    def max(xs: List[Int]): Int = {
+      def max(m: Int, xs: List[Int]): Int = xs match {
+        case Nil => m
+        case h :: tail if h > m => max(h, tail)
+        case h :: tail => max(m, tail)
+      }
+      xs match {
+        case Nil => throw new NoSuchElementException()
+        case h :: tail => max(h, tail)
+      }
+    }
   }
