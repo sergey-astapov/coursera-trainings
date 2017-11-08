@@ -78,4 +78,24 @@ class BloxorzSuite extends FunSuite {
     }
   }
 
+  trait Level0 extends SolutionChecker {
+    /* terrain for level 1*/
+
+    val level =
+      """ST
+        |oo
+        |oo"""
+        .stripMargin
+
+    val optsolution = List(Down,Right,Up,Up)
+  }
+
+
+  test("level 0 test") {
+    new Level0 {
+      assertResult(true)(terrain(Pos(0, 0)))
+      assertResult(false)(terrain(Pos(3, 0)))
+    }
+  }
+
 }
