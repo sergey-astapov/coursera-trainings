@@ -50,5 +50,17 @@ class CalculatorSuite extends FunSuite with ShouldMatchers {
     val resultRed2 = TweetLength.colorForRemainingCharsCount(Var(-5))
     assert(resultRed2() == "red")
   }
+}
 
+@RunWith(classOf[JUnitRunner])
+class PolynomialSuite extends FunSuite with ShouldMatchers {
+  test("check delta") {
+    assertResult(-12)(Polynomial.computeDelta(Signal(4), Signal(2), Signal(1)).apply())
+    assertResult(8)(Polynomial.computeDelta(Signal(2), Signal(4), Signal(1)).apply())
+    assertResult(1)(Polynomial.computeDelta(Signal(1), Signal(1), Signal(0)).apply())
+  }
+
+  test("check roots") {
+    assertResult(Set(1.0, 0.0))(Polynomial.computeSolutions(Signal(1), Signal(1), Signal(0), Signal(1)).apply())
+  }
 }
