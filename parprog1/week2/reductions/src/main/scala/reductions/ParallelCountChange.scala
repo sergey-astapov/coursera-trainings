@@ -45,21 +45,13 @@ object ParallelCountChange {
   /** Returns the number of ways change can be made from the specified list of
    *  coins for the specified amount of money.
    */
-  def countChange(money: Int, coins: List[Int]): Int = {
-    val sortedCoins = coins.sorted.reverse
-
-    def howMany(m: Int, list: List[Int]): Int = (m, list) match {
-      case (x, _) if x < 0 => 0
-      case (x, _) if x == 0 => 1
-      case (_, Nil) => 0
-      case (x, h::tail) if x < h => howMany(x, tail)
-      case (x, h::tail) if x == h => 1 + howMany(x, tail)
-      case (x, h::tail) =>
-        val r = x - h
-        howMany(r, h::tail) + howMany(x, tail)
-    }
-
-    howMany(money, sortedCoins)
+  def countChange(money: Int, coins: List[Int]): Int = (money, coins) match {
+    case (x, _) if x < 0 => 0
+    case (x, _) if x == 0 => 1
+    case (_, Nil) => 0
+    case (x, h :: tail) if x < h => countChange(x, tail)
+    case (x, h :: tail) if x == h => 1 + countChange(x, tail)
+    case (x, h :: tail) => countChange(x - h, h :: tail) + countChange(x, tail)
   }
 
 //  def countChange(money: Int, coins: List[Int]): Int = parCountChange(money, coins, (_, _) => false)
@@ -71,55 +63,13 @@ object ParallelCountChange {
     */
   def parCountChange(money: Int, coins: List[Int], threshold: Threshold): Int = {
     if (threshold(money, coins)) countChange(money, coins)
-    else {
-      val sortedCoins = coins.sorted.reverse
-
-      def f(x: Int): Int = x
-
-      def howMany(m: Int, list: List[Int]): Int = (m, list) match {
-        case (x, _) if x < 0 => 0
-        case (x, _) if x == 0 => 1
-        case (_, Nil) => 0
-        case (x, h::tail) =>
-          val (a, b) =
-            if (x < h) parallel(f(0), howMany(x, tail))
-            else if (x == h) parallel(f(1), howMany(x, tail))
-            else parallel(howMany(x - h, h::tail), howMany(x, tail))
-          a + b
-      }
-
-      howMany(money, sortedCoins)
-    }
-  }
-
-  sealed trait Tree
-
-  final case class Node(ls: Tree, rs: Tree) extends Tree
-
-  final case class Leaf(count: Int) extends Tree
-
-  def treeCountChange(money: Int, coins: List[Int], threshold: Threshold): Int = {
-    if (threshold(money, coins)) countChange(money, coins)
-    else {
-      val sortedCoins = coins.sorted.toArray
-
-      def howMany(m: Int, i: Int): Tree = (m, i) match {
-        case (x, _) if x < 0 => Leaf(0)
-        case (x, _) if x == 0 => Leaf(1)
-        case (_, index) if index < 0 => Leaf(0)
-        case (x, index) if x < sortedCoins(index) => howMany(x, index - 1)
-        case (x, index) if x == sortedCoins(index) => Node(Leaf(1), howMany(x, index - 1))
-        case (x, index) =>
-          val r = x - sortedCoins(index)
-          Node(howMany(r, index), howMany(x, index - 1))
-      }
-
-      def traverse(tree: Tree): Int = tree match {
-        case Node(ls, rs) => traverse(ls) + traverse(rs)
-        case Leaf(c) => c
-      }
-
-      traverse(howMany(money, sortedCoins.length - 1))
+    else (money, coins) match {
+      case (x, _) if x < 0 => 0
+      case (x, _) if x == 0 => 1
+      case (_, Nil) => 0
+      case (x, h::tail) =>
+        val (a, b) = parallel(parCountChange(x - h, h::tail, threshold), parCountChange(x, tail, threshold))
+        a + b
     }
   }
 
