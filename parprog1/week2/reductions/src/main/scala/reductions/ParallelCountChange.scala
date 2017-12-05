@@ -46,20 +46,20 @@ object ParallelCountChange {
    *  coins for the specified amount of money.
    */
   def countChange(money: Int, coins: List[Int]): Int = {
-    val sortedCoins = coins.sorted.toArray
+    val sortedCoins = coins.sorted.reverse
 
-    def howMany(m: Int, i: Int): Int = (m, i) match {
+    def howMany(m: Int, list: List[Int]): Int = (m, list) match {
       case (x, _) if x < 0 => 0
       case (x, _) if x == 0 => 1
-      case (_, index) if index < 0 => 0
-      case (x, index) if x < sortedCoins(index) => howMany(x, index - 1)
-      case (x, index) if x == sortedCoins(index) => 1 + howMany(x, index - 1)
-      case (x, index) =>
-        val r = x - sortedCoins(index)
-        howMany(r, index) + howMany(x, index - 1)
+      case (_, Nil) => 0
+      case (x, h::tail) if x < h => howMany(x, tail)
+      case (x, h::tail) if x == h => 1 + howMany(x, tail)
+      case (x, h::tail) =>
+        val r = x - h
+        howMany(r, h::tail) + howMany(x, tail)
     }
 
-    howMany(money, sortedCoins.length - 1)
+    howMany(money, sortedCoins)
   }
 
 //  def countChange(money: Int, coins: List[Int]): Int = parCountChange(money, coins, (_, _) => false)
