@@ -1,6 +1,7 @@
 package reductions
 
-import scala.annotation._
+import java.lang.Math.min
+
 import org.scalameter._
 import common._
 
@@ -38,33 +39,50 @@ object ParallelParenthesesBalancingRunner {
 
 object ParallelParenthesesBalancing {
 
-  def balance(chars: List[Char], count: Int = 0): Boolean = (chars, count) match {
-    case (_, c) if c < 0 => false
-    case (Nil, c) => c == 0
-    case ('(' :: tail, c) => balance(tail, c + 1)
-    case (')' :: tail, c) => balance(tail, c - 1)
-    case (_ :: tail, c) => balance(tail, c)
-  }
-
   /** Returns `true` iff the parentheses in the input `chars` are balanced.
    */
   def balance(chars: Array[Char]): Boolean = {
-    balance(chars.toList)
+    def traverse(idx: Int, until: Int, arg1: Int, arg2: Int): (Int, Int) = {
+      if (idx >= until) (arg1, arg2)
+      else if (arg1 < 0) (arg1, arg2)
+      else chars(idx) match {
+        case '(' => traverse(idx + 1, until, arg1 + 1, arg2 + 1)
+        case ')' => traverse(idx + 1, until, min(arg1, arg2 - 1), arg2 - 1)
+        case _ => traverse(idx + 1, until, arg1, arg2)
+      }
+    }
+
+    traverse(0, chars.length, 0, 0) == (0, 0)
+//    parBalance(chars, 1)
   }
 
   /** Returns `true` iff the parentheses in the input `chars` are balanced.
    */
   def parBalance(chars: Array[Char], threshold: Int): Boolean = {
 
-    def traverse(idx: Int, until: Int, arg1: Int, arg2: Int) /*: ???*/ = {
-      ???
+    def traverse(idx: Int, until: Int, arg1: Int, arg2: Int): (Int, Int) = {
+      if (idx >= until) (arg1, arg2)
+      else if (arg1 < 0) (arg1, arg2)
+      else chars(idx) match {
+        case '(' => traverse(idx + 1, until, arg1 + 1, arg2 + 1)
+        case ')' => traverse(idx + 1, until, min(arg1, arg2 - 1), arg2 - 1)
+        case _ => traverse(idx + 1, until, arg1, arg2)
+      }
     }
 
-    def reduce(from: Int, until: Int) /*: ???*/ = {
-      ???
+    def reduce(from: Int, until: Int): (Int, Int) = {
+      val diff = until - from
+      if (diff <= threshold) traverse(from, until, 0, 0)
+      else {
+        val (a, b) = parallel(reduce(from, from + diff / 2), reduce(from + diff / 2, until))
+        (min(a._1, a._2 + b._1), a._2 + b._2)
+      }
     }
 
-    reduce(0, chars.length) == ???
+    if (chars.isEmpty) true
+    else {
+      reduce(0, chars.length) == (0, 0)
+    }
   }
 
   // For those who want more:
