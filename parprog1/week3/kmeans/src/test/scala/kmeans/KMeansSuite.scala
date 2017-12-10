@@ -1,15 +1,16 @@
 package kmeans
 
 import java.util.concurrent._
-import scala.collection._
-import org.scalatest.FunSuite
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+
 import common._
-import scala.math._
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
+
+import scala.collection._
 
 object KM extends KMeans
-import KM._
+import kmeans.KM._
 
 @RunWith(classOf[JUnitRunner])
 class KMeansSuite extends FunSuite {
@@ -73,5 +74,51 @@ class KMeansSuite extends FunSuite {
 
 }
 
-
+//object FLTest {
+//  trait Iter[T] {
+//    def hasNext: Boolean
+//    def next(): T
+//    def foldLeft[S](z: S)(f: (S, T) => S): S = {
+//      var result = z
+//      while (hasNext) result = f(result, next())
+//      result
+//    }
+//  }
+//
+//  trait Split[T] extends Iter[T] {
+//    def split: Seq[Split[T]]
+//    def remaining: Int
+//    val threshold: Int
+//
+//    type Task[K] = ForkJoinTask[K]
+//
+//    def fold(z: T)(f: (T, T) => T): T = {
+//      if (remaining < threshold) foldLeft(z)(f)
+//      else {
+//        val children: Seq[Task[T]] = for (c <- split) yield {
+//          task(c.fold(z)(f))
+//        }
+//        children.map(_.join()).foldLeft(z)(f)
+//      }
+//    }
+//  }
+//
+//  trait Builder[A, R] {
+//    def +=(e: A): Builder[A, R]
+//    def result: R
+//   }
+//
+//  trait Traversable[T] {
+//    def foreach(f: T => Unit): Unit
+//    def newBuilder: Builder[T, Traversable[T]]
+//    def filter(p: T => Boolean): Traversable[T] = {
+//      var b = newBuilder
+//      foreach(e => {
+//        if (p(e)) b += e
+//      })
+//      b.result
+//    }
+//  }
+//
+//}
   
