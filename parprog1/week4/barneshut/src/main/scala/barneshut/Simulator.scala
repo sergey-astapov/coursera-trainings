@@ -1,22 +1,22 @@
 package barneshut
 
-import java.awt._
-import java.awt.event._
-import javax.swing._
-import javax.swing.event._
-import scala.collection.parallel.TaskSupport
-import scala.collection.parallel.Combiner
+import scala.collection.parallel.{Combiner, TaskSupport}
 import scala.collection.parallel.mutable.ParHashSet
-import common._
 
 class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
 
   def updateBoundaries(boundaries: Boundaries, body: Body): Boundaries = {
-    ???
+    Boundaries(boundaries.minX min body.x,
+      boundaries.maxX max body.x,
+      boundaries.minY min body.y,
+      boundaries.maxY max body.y)
   }
 
   def mergeBoundaries(a: Boundaries, b: Boundaries): Boundaries = {
-    ???
+    Boundaries(a.minX min b.minX,
+      a.maxX max b.maxX,
+      a.minY min b.minY,
+      a.maxY max b.maxY)
   }
 
   def computeBoundaries(bodies: Seq[Body]): Boundaries = timeStats.timed("boundaries") {
@@ -28,7 +28,10 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
   def computeSectorMatrix(bodies: Seq[Body], boundaries: Boundaries): SectorMatrix = timeStats.timed("matrix") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+    parBodies.aggregate(new SectorMatrix(boundaries, SECTOR_PRECISION))(
+      (sm, b) => sm += b,
+      (sm1, sm2) => sm1.combine(sm2)
+    )
   }
 
   def computeQuad(sectorMatrix: SectorMatrix): Quad = timeStats.timed("quad") {
@@ -38,7 +41,7 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics) {
   def updateBodies(bodies: Seq[Body], quad: Quad): Seq[Body] = timeStats.timed("update") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+    parBodies.map(b => b.updated(quad)).seq
   }
 
   def eliminateOutliers(bodies: Seq[Body], sectorMatrix: SectorMatrix, quad: Quad): Seq[Body] = timeStats.timed("eliminate") {
