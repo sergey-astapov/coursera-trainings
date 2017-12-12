@@ -34,20 +34,6 @@ package object barneshut {
       b.maxY = maxY
       b
     }
-
-    private def apply(bodies: Seq[Body], opt: Option[Boundaries]): Option[Boundaries] = (bodies, opt) match {
-      case (h :: tail, Some(b)) =>
-        apply(tail, Some(Boundaries(
-          Math.min(h.x, b.minX),
-          Math.max(h.x, b.maxX),
-          Math.min(h.y, b.minY),
-          Math.max(h.y, b.maxY))))
-      case (h :: tail, _) =>
-        apply(tail, Some(Boundaries(h.x, h.x, h.y, h.y)))
-      case (Nil, b) => b
-    }
-
-    def apply(bodies: Seq[Body]): Boundaries = apply(bodies, None).getOrElse(throw new IllegalStateException())
   }
 
   sealed abstract class Quad {
@@ -86,8 +72,8 @@ package object barneshut {
     val size: Float = 2 * nw.size
     private val quads = List(nw, ne, sw, se)
     val mass: Float = quads.map(_.mass).sum
-    val massX: Float = quads.map(q => q.massX * q.mass).foldLeft(0f)(_ + _) / mass
-    val massY: Float = quads.map(q => q.massY * q.mass).foldLeft(0f)(_ + _) / mass
+    val massX: Float = quads.map(q => q.massX * q.mass).sum / mass
+    val massY: Float = quads.map(q => q.massY * q.mass).sum / mass
     val total: Int = quads.map(_.total).sum
 
     def insert(b: Body): Fork = {
@@ -107,25 +93,23 @@ package object barneshut {
   case class Leaf(centerX: Float, centerY: Float, size: Float, bodies: Seq[Body])
   extends Quad {
     val (mass, massX, massY) = {
-      val m = bodies.map(_.mass).foldLeft(0f)(_ + _)
-      val mx = bodies.map(b => b.mass * b.x).foldLeft(0f)(_ + _) / m
-      val my = bodies.map(b => b.mass * b.y).foldLeft(0f)(_ + _) / m
+      val m = bodies.map(_.mass).sum
+      val mx = bodies.map(b => b.mass * b.x).sum / m
+      val my = bodies.map(b => b.mass * b.y).sum / m
       (m, mx, my)
     }
     val total: Int = bodies.size
-    def insert(b: Body): Quad = if (size == minimumSize) {
-      val bound = Boundaries(bodies)
+    def insert(b: Body): Quad = if (size > minimumSize) {
+      val newSize = size / 2
+      val offset = size / 4
       val fork = Fork(
-        Empty(bound.centerX - bound.width / 4, centerY - bound.height / 4, bound.size / 2),
-        Empty(bound.centerX + bound.width / 4, centerY - bound.height / 4, bound.size / 2),
-        Empty(bound.centerX - bound.width / 4, centerY + bound.height / 4, bound.size / 2),
-        Empty(bound.centerX + bound.width / 4, centerY + bound.height / 4, bound.size / 2))
-      bodies.foreach(fork.insert)
-      fork
+        Empty(centerX - offset, centerY - offset, newSize),
+        Empty(centerX + offset, centerY - offset, newSize),
+        Empty(centerX - offset, centerY + offset, newSize),
+        Empty(centerX + offset, centerY + offset, newSize))
+      (bodies :+ b).foldLeft(fork)((f, b) => f.insert(b))
     } else {
-      val newBodies = bodies :+ b
-      val bound = Boundaries(newBodies)
-      Leaf(bound.centerX, bound.centerY, bound.size, newBodies)
+      Leaf(centerX, centerY, size, bodies :+ b)
     }
   }
 
@@ -175,15 +159,12 @@ package object barneshut {
 
       def traverse(quad: Quad): Unit = (quad: Quad) match {
         case Empty(_, _, _) =>
-          // no force
         case Leaf(_, _, _, bodies) =>
           bodies.foreach(b => addForce(b.mass, b.x, b.y))
-        case f @ Fork(nw, ne, sw, se) =>
-          if (quad.size / distance(f.centerX, f.centerY, x, y) < theta) {
-            List(nw, ne, sw, se).foreach(traverse)
-          } else {
-            addForce(f.mass, f.massX, f.massY)
-          }
+        case Fork(nw, ne, sw, se) if quad.size / distance(quad.massX, quad.massY, x, y) < theta =>
+          addForce(quad.mass, quad.massX, quad.massY)
+        case Fork(nw, ne, sw, se) =>
+          List(nw, ne, sw, se).foreach(traverse)
       }
 
       traverse(quad)
