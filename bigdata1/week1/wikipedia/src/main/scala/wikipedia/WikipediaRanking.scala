@@ -44,17 +44,11 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] =
-    rdd.map(wa => langs.filter(wa.mentionsLanguage).map((_, 1)).toMap)
-      .reduce {
-        case (m1, m2) =>
-          val keys1 = m1.keySet
-          val keys2 = m2.keySet.filter(!keys1.contains(_))
-          m1.map {
-            case (l, c) => (l, c + m2.getOrElse(l, 0))
-          } ++ m2.filter(x => !keys1.contains(x._1))
-      }.toList
+  def rankLangs(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = {
+    val data = rdd.persist()
+    langs.map(l => (l, occurrencesOfLang(l, data)))
       .sortWith(orderFunc)
+  }
 
   /* Compute an inverted index of the set of articles, mapping each language
    * to the Wikipedia pages in which it occurs.
