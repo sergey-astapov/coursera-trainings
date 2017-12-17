@@ -95,17 +95,17 @@ class StackOverflow extends Serializable {
   /** Compute the maximum score for each posting */
   def scoredPostings(grouped: RDD[(QID, Iterable[(Question, Answer)])]): RDD[(Question, HighScore)] = {
 
-    def answerHighScore(as: Array[Answer]): HighScore = {
-      var highScore = 0
-          var i = 0
-          while (i < as.length) {
-            val score = as(i).score
-                if (score > highScore)
-                  highScore = score
-                  i += 1
-          }
-      highScore
-    }
+//    def answerHighScore(as: Array[Answer]): HighScore = {
+//      var highScore = 0
+//          var i = 0
+//          while (i < as.length) {
+//            val score = as(i).score
+//                if (score > highScore)
+//                  highScore = score
+//                  i += 1
+//          }
+//      highScore
+//    }
 
     grouped.mapValues(x => x.maxBy(_._2.score))
       .map(x => x._2 match {
@@ -316,10 +316,8 @@ class StackOverflow extends Serializable {
       val medianScore: Int = highScores.length match {
         case 0 => 0
         case 1 => highScores(0)
-        case _ => highScores.length % 2 match {
-          case 0 => (highScores(highScores.length / 2) + highScores((highScores.length / 2) - 1)) / 2
-          case 1 => highScores((highScores.length - 1) / 2)
-        }
+        case len if len % 2 == 0 => (highScores(len / 2) + highScores((len / 2) - 1)) / 2
+        case len => highScores((len - 1) / 2)
       }
 
       (langLabel, langPercent, clusterSize, medianScore)
