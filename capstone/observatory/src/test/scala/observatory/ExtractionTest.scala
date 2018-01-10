@@ -5,6 +5,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 trait ExtractionTest extends FunSuite {
-
-  
+  test("1st") {
+    assert(true)
+  }
 }
