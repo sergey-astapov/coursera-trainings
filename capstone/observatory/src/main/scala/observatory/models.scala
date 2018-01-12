@@ -1,7 +1,10 @@
 package observatory
 
+import java.time.LocalDate
+
 /**
   * Introduced in Week 1. Represents a location on the globe.
+  *
   * @param lat Degrees of latitude, -90 ≤ lat ≤ 90
   * @param lon Degrees of longitude, -180 ≤ lon ≤ 180
   */
@@ -39,4 +42,45 @@ case class CellPoint(x: Double, y: Double)
   * @param blue Level of blue, 0 ≤ blue ≤ 255
   */
 case class Color(red: Int, green: Int, blue: Int)
+
+case class StationId(stn: String, wban: String)
+
+object StationId {
+  def apply(list: List[String]): StationId = list match {
+    case stn :: wban :: _ => StationId(stn, wban)
+    case stn :: Nil => StationId(stn, "")
+    case Nil => StationId("", "")
+  }
+}
+
+case class Station(id: StationId, location: Option[Location])
+
+object Station {
+  def apply(s: String): Station = {
+    val list = s.split(",").toList
+    val id = StationId(list)
+    list match {
+      case _ :: _ :: lat :: lon :: Nil => Station(id, Some(Location(lat.toDouble, lon.toDouble)))
+      case _ => Station(id, None)
+    }
+  }
+}
+
+case class StationTemperature(stationId: StationId, date: LocalDate, temperature: Temperature)
+
+object StationTemperature {
+  def apply(s: String, year: Year): StationTemperature = {
+    val list = s.split(",").toList
+    val id = StationId(list)
+    list match {
+      case _ :: _ :: month :: day :: t :: Nil =>
+        StationTemperature(id, LocalDate.of(year, month.toInt, day.toInt), far2cel(t.toDouble))
+      case _ => throw new IllegalArgumentException(s"$s is wrong")
+    }
+  }
+
+  def far2cel: Double => Double = x => (x - 32.0) * 5 / 9
+
+  def fn2year: String => Year = x => x.replace("/", "").replace(".csv", "").toInt
+}
 

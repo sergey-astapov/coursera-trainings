@@ -1,2 +1,4 @@
 **/scala-capstone-data.zip
-**/*.csv
+**/1*.csv
+**/2*.csv
+**/stations.csv
