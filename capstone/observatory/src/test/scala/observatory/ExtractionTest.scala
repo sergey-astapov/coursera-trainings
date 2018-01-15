@@ -3,7 +3,7 @@ package observatory
 import observatory.Extraction._
 import org.scalatest.FunSuite
 
-trait ExtractionTest extends FunSuite {
+trait ExtractionTestTrait extends FunSuite {
   test("Extraction should work") {
     val iter = locateTemperatures(2015, "/test-stations.csv", "/test-2015.csv")
     assert(iter.nonEmpty)
@@ -14,3 +14,5 @@ trait ExtractionTest extends FunSuite {
     tuples.take(5).foreach(println)
   }
 }
+
+class ExtractionTest extends ExtractionTestTrait {}

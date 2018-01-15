@@ -3,9 +3,14 @@ package observatory
 import java.time.LocalDate
 
 import observatory.StationTemperature.far2cel
+import observatory.TemperatureColor.interpolate
 import org.scalatest.FunSuite
 
-trait ModelsTest extends StationTest with StationTemperatureTest {}
+trait ModelsTestTrait extends StationTest
+  with StationTemperatureTest
+  with TempreratureColorTest {}
+
+class ModelsTest extends ModelsTestTrait {}
 
 trait StationTest extends FunSuite {
   test("parse '007005,,,' should work") {
@@ -44,5 +49,12 @@ trait StationTemperatureTest extends FunSuite {
 
   test("far2cel should work") {
     assertResult(10.0)(far2cel(50.0))
+  }
+}
+
+trait TempreratureColorTest extends FunSuite {
+  test("interpolate should work") {
+    val sut = interpolate(-55.0, (-60.0, Color(0, 0, 0)), (-50.0, Color(33, 0, 107)))
+    assertResult(Color(17, 0, 54))(sut)
   }
 }
