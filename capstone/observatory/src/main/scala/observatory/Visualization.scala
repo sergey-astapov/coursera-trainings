@@ -1,6 +1,5 @@
 package observatory
 
-import java.io.File
 import java.lang.Math._
 
 import com.sksamuel.scrimage.Image
@@ -68,7 +67,7 @@ object Visualization {
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     val width = 360
     val height = 180
-    val pixels = (0 until width * height)
+    val pixels = (0 until width * height).par
       .map(i => interpolateColor(
           colors,
           predictTemperature(
@@ -79,18 +78,14 @@ object Visualization {
       )
       .toArray
     val image = Image(width, height, pixels)
-    image.output(new File("target/some-image.png"))
     image
   }
 
   def pixelLocation(w: Int, h: Int, i: Int): Location = {
-    val widthFactor = 180 * 2 / w.toDouble
-    val heightFactor = 90 * 2 / h.toDouble
-
     val x: Int = i % w
-    val y: Int = i / h
+    val y: Int = i / w
 
-    Location(90 - (y * heightFactor), (x * widthFactor) - 180)
+    Location(90 - y, x - 180)
   }
 }
 
