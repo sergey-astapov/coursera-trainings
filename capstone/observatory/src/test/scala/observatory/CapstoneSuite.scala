@@ -8,7 +8,7 @@ class CapstoneSuite
   extends ModelsTestTrait
     with ExtractionTestTrait
     with VisualizationTestTrait
-    with InteractionTest
+    with InteractionTestTrait
     with ManipulationTest
     with Visualization2Test
     with Interaction2Test

@@ -3,6 +3,7 @@ package observatory
 import java.lang.Math._
 
 import com.sksamuel.scrimage.Image
+import observatory.Visualization.{interpolateColor, pixelLocation, predictTemperature}
 
 /**
   * 2nd milestone: basic visualization
@@ -65,20 +66,7 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    val width = 360
-    val height = 180
-    val pixels = (0 until width * height).par
-      .map(i => interpolateColor(
-          colors,
-          predictTemperature(
-            temperatures,
-            pixelLocation(width, height, i)
-          )
-        ).pixel()
-      )
-      .toArray
-    val image = Image(width, height, pixels)
-    image
+    ImageBuilder(temperatures, colors, 360, 180, 255).build
   }
 
   def pixelLocation(w: Int, h: Int, i: Int): Location = {
@@ -87,5 +75,65 @@ object Visualization {
 
     Location(90 - y, x - 180)
   }
+}
+
+class ImageBuilder(temperatures: Iterable[(Location, Temperature)],
+                   colors: Iterable[(Temperature, Color)],
+                   width: Int,
+                   height: Int,
+                   alpha: Int) {
+  def build: Image = {
+    val pixels = (0 until width * height).par
+      .map(i => interpolateColor(
+        colors,
+        predictTemperature(
+          temperatures,
+          pixelLocation(width, height, i)
+        )
+      ).pixel(alpha))
+      .toArray
+    Image(width, height, pixels)
+  }
+}
+
+object ImageBuilder {
+  def apply(temperatures: Iterable[(Location, Temperature)],
+            colors: Iterable[(Temperature, Color)],
+            width: Int,
+            height: Int,
+            alpha: Int): ImageBuilder = new ImageBuilder(temperatures, colors, width, height, alpha)
+}
+
+class TileImageBuilder(temperatures: Iterable[(Location, Temperature)],
+                       colors: Iterable[(Temperature, Color)],
+                       tile: Tile,
+                       width: Int,
+                       height: Int,
+                       alpha: Int) {
+  def build: Image = {
+    val pixels = (0 until width * height).par
+      .map { i =>
+        val x = (i % width).toDouble / width + tile.x
+        val y = (i / height).toDouble / height + tile.y
+        interpolateColor(
+          colors,
+          predictTemperature(
+            temperatures,
+            Tile(x.toInt, y.toInt, tile.zoom).toLocation
+          )
+        ).pixel(alpha)
+      }
+      .toArray
+    Image(width, height, pixels)
+  }
+}
+
+object TileImageBuilder {
+  def apply(temperatures: Iterable[(Location, Temperature)],
+            colors: Iterable[(Temperature, Color)],
+            tile: Tile,
+            width: Int,
+            height: Int,
+            alpha: Int = 127): TileImageBuilder = new TileImageBuilder(temperatures, colors, tile, width, height, alpha)
 }
 

@@ -8,7 +8,8 @@ import org.scalatest.FunSuite
 
 trait ModelsTestTrait extends StationTest
   with StationTemperatureTest
-  with TempreratureColorTest {}
+  with TempreratureColorTest
+  with TileTestTrait
 
 class ModelsTest extends ModelsTestTrait {}
 
@@ -58,3 +59,11 @@ trait TempreratureColorTest extends FunSuite {
     assertResult(Color(17, 0, 54))(sut)
   }
 }
+
+trait TileTestTrait extends FunSuite {
+  test("tile to path should work") {
+    assertResult("target/temperatures/2015/0/0-0.png")(Tile(0, 0, 0).toPath(2015))
+  }
+}
+
+class TileTest extends TileTestTrait

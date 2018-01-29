@@ -17,7 +17,7 @@ case class Location(lat: Double, lon: Double) {
     LocationRadians(this) haversineEarthDistance LocationRadians(other)
 }
 
-import Math._
+import java.lang.Math._
 
 case class LocationRadians(loc: Location) {
   val earthRadius = 6372.8
@@ -46,7 +46,27 @@ case class LocationRadians(loc: Location) {
   * @param y Y coordinate of the tile
   * @param zoom Zoom level, 0 ≤ zoom ≤ 19
   */
-case class Tile(x: Int, y: Int, zoom: Int)
+case class Tile(x: Int, y: Int, zoom: Int) {
+  def toLatLon = LatLonPoint(
+    toDegrees(atan(sinh(PI * (1.0 - 2.0 * y.toDouble / (1 << zoom))))),
+    x.toDouble / (1 << zoom) * 360.0 - 180.0,
+    zoom)
+
+  def toLocation: Location = toLatLon.toLocation
+
+  def toURI = new java.net.URI(s"https://tile.openstreetmap.org/$zoom/$x/$y.png")
+
+  def toPath: Year => String = year => s"target/temperatures/$year/$zoom/$x-$y.png"
+}
+
+case class LatLonPoint(lat: Double, lon: Double, zoom: Int) {
+  def toLocation: Location = Location(lat, lon)
+
+  def toTile = Tile(
+    ((lon + 180.0) / 360.0 * (1 << zoom)).toInt,
+    ((1 - log(tan(toRadians(lat)) + 1 / cos(toRadians(lat))) / PI) / 2.0 * (1 << zoom)).toInt,
+    zoom)
+}
 
 /**
   * Introduced in Week 4. Represents a point on a grid composed of
